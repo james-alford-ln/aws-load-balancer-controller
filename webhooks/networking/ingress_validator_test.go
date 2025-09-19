@@ -231,6 +231,22 @@ func Test_ingressValidator_checkIngressClass(t *testing.T) {
 			},
 			expected: true,
 		},
+		{
+			name:                   "ingress being deleted with non-existent IngressClass",
+			configuredIngressClass: "alb",
+			ing: &networking.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace:         "awesome-ns",
+					Name:              "awesome-ing",
+					DeletionTimestamp: &metav1.Time{Time: time.Now()},
+				},
+				Spec: networking.IngressSpec{
+					IngressClassName: awssdk.String("non-existent-class"),
+				},
+			},
+			ingClassList: []*networking.IngressClass{},
+			expected:     false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

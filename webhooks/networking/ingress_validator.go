@@ -113,6 +113,11 @@ func (v *ingressValidator) ValidateDelete(ctx context.Context, obj runtime.Objec
 
 // checkIngressClass checks to see if this ingress is handled by this controller.
 func (v *ingressValidator) checkIngressClass(ctx context.Context, ing *networking.Ingress) (bool, error) {
+	// Skip validation if the ingress is being deleted (deletionTimestamp is set)
+	if !ing.DeletionTimestamp.IsZero() {
+		return false, nil
+	}
+
 	if ingClassAnnotation, exists := ing.Annotations[annotations.IngressClass]; exists {
 		return !v.classAnnotationMatcher.Matches(ingClassAnnotation), nil
 	}

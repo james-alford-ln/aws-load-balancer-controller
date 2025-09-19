@@ -184,6 +184,11 @@ func (v *ingressValidator) checkGroupNameAnnotationUsage(ing *networking.Ingress
 // checkIngressClassUsage checks the usage of "ingressClassName" field.
 // if ingressClassName is mutated, it must refer to a existing & valid IngressClass.
 func (v *ingressValidator) checkIngressClassUsage(ctx context.Context, ing *networking.Ingress, oldIng *networking.Ingress) error {
+	// Skip validation if the ingress is being deleted (deletionTimestamp is set)
+	if !ing.DeletionTimestamp.IsZero() {
+		return nil
+	}
+
 	usedInNewIng := false
 	usedInOldIng := false
 	newIngressClassName := ""

@@ -3,6 +3,7 @@ package networking
 import (
 	"context"
 	"testing"
+	"time"
 
 	awssdk "github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/go-logr/logr"
@@ -229,6 +230,22 @@ func Test_ingressValidator_checkIngressClass(t *testing.T) {
 				},
 			},
 			expected: true,
+		},
+		{
+			name:                   "ingress being deleted with non-existent IngressClass",
+			configuredIngressClass: "alb",
+			ing: &networking.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace:         "awesome-ns",
+					Name:              "awesome-ing",
+					DeletionTimestamp: &metav1.Time{Time: time.Now()},
+				},
+				Spec: networking.IngressSpec{
+					IngressClassName: awssdk.String("non-existent-class"),
+				},
+			},
+			ingClassList: []*networking.IngressClass{},
+			expected:     false,
 		},
 	}
 	for _, tt := range tests {
@@ -978,6 +995,32 @@ func Test_ingressValidator_checkIngressClassUsage(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "awesome-ns",
 						Name:      "awesome-ing",
+					},
+					Spec: networking.IngressSpec{
+						IngressClassName: awssdk.String("awesome-class"),
+					},
+				},
+				oldIng: &networking.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "awesome-ns",
+						Name:      "awesome-ing",
+					},
+					Spec: networking.IngressSpec{
+						IngressClassName: awssdk.String("awesome-class"),
+					},
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name: "ingress deletion with IngressClassName that refers to non-existent IngressClass",
+			env:  env{},
+			args: args{
+				ing: &networking.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace:         "awesome-ns",
+						Name:              "awesome-ing",
+						DeletionTimestamp: &metav1.Time{Time: time.Now()},
 					},
 					Spec: networking.IngressSpec{
 						IngressClassName: awssdk.String("awesome-class"),
